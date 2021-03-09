@@ -1,0 +1,78 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+
+metadata:
+  name: story-pvc
+
+spec:
+  volumeName: host-pv
+  resources:
+    requests:
+      storage: 1Gi
+
+  volumeMode: Filesystem
+  storageClassName: standard
+
+  accessModes:
+    - ReadWriteOnce
+
+---
+
+apiVersion: v1
+kind: PersistentVolume
+
+metadata:
+  name: host-pv
+
+spec:
+  capacity:
+    storage: 1Gi 
+
+  volumeMode: Filesystem
+  storageClassName: standard
+
+  accessModes:
+    - ReadWriteOnce
+
+  hostPath:
+    path: /data
+    type: DirectoryOrCreate
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: my-story-app
+
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: my-story-app
+
+  template:
+    metadata:
+      labels:
+        app: my-story-app
+
+    spec:
+      containers:
+      - name: my-story-app
+        image: mattlaw75/my-story-app:latest
+        imagePullPolicy: "Always"
+
+        volumeMounts:
+          - mountPath: /app/story
+            name: story-volume
+
+        ports:
+        - containerPort: 3000
+
+      volumes:
+        - name: story-volume
+          persistentVolumeClaim:
+            claimName: story-pvc
+
+
